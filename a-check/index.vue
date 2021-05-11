@@ -52,6 +52,12 @@ export default {
       default () {
         return []
       }
+    },
+    initList: {
+      type: Array,
+      default () {
+        return []
+      }
     }
   },
   computed: {},
@@ -76,7 +82,13 @@ export default {
     }
   },
   watch: {},
-  created () {}
+  created () {
+    setTimeout(() => {
+      this.attr_List = deepCopy(this.attrList)
+      this.checked_attr = deepCopy(this.initList)
+      this.check_attr()
+    }, 500)
+  }
 }
 </script>
 <style lang="stylus" scoped>
