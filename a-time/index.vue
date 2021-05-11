@@ -1,96 +1,125 @@
 <template>
-  <div class="attr-check">
+  <div class="a-check">
     <Row>
       <Col flex="110px">
         <span class="c-fix-title wt">{{ attr_name }}</span>
       </Col>
-      <Col flex="90px" v-if="nolimit">
-        <Button v-if="checked" type="primary" @click="noLimit">不限</Button>
-        <Button v-else @click="noLimit">不限</Button>
-      </Col>
-      <!-- 充值情况 -->
-      <Col flex="auto" v-if="atype === 'pay'">
-        <Button type="primary" ghost @click="select_show = !select_show">{{
-          btn_name[0]
-        }}</Button>
-        <Select v-model="dim" style="width: 140px" @on-open-change="dim_change">
-          <Option v-for="item in attrBox.dimList" :value="item.value" :key="item.value">{{
-            item.label
-          }}</Option>
-        </Select>
-        <cCompare />
+      <!-- 时间 -->
+      <Col flex="auto">
+        <date-pick
+          type="daterange"
+          :value="datetime"
+          :options="datetimeOption"
+          confirm
+          :clearable="false"
+          :editable="false"
+          split-panels
+          :transfer="false"
+          @on-change="handleDatetime"
+          @on-ok="confirmDatetime"
+          @on-clear="day_clear"
+          @on-clear-shortcut="clearShortCut"
+          placement="bottom-start"
+          placeholder="请选择查询日期范围"
+          style="width: 200px"
+        />
       </Col>
     </Row>
     <Divider />
   </div>
 </template>
 <script>
-import cCompare from '@/components/c-compare'
-import attrBox from '@/data/user/attr_box'
+import shortcuts from '@/data/shortcuts'
+import DatePick from '@/components/date-picker'
+import { deepCopy } from '@/common/js/c_common'
+// import { formatDate } from '@/common/js/utils'
 export default {
-  name: 'attr-check',
+  name: 'a-check',
   components: {
-    cCompare
+    DatePick
   },
   data () {
+    // const date = new Date()
+    // var fday
+    // if (date.getMonth() < 9) {
+    //   fday = date.getFullYear() + '-0' + (date.getMonth() + 1) + '-01'
+    // } else {
+    //   fday = date.getFullYear() + '-' + (date.getMonth() + 1) + '-01'
+    // }
+    // const now = formatDate(date, 'yyyy-MM-dd') // 初始化默认时间
     return {
-      attr_List: deepCopy(this.attrList),
-      res_attr_List: [],
-      sel_attr_List: [],
-      checked: true,
-      hasPhone: false,
-      attrBox: attrBox,
-      dim: 1
+      datetime: deepCopy(this.initDate),
+      // datetime: [fday, now],
+      comDate: deepCopy(this.initDate),
+      // comDate: [fday, now],
+      datetimeOption: {
+        shortcuts,
+        disabledDate (date) {
+          return date && date.valueOf() > Date.now()
+        }
+      }
     }
   },
   props: {
-    atype: {
-      type: String,
-      default () {
-        return 'check'
-      }
-    },
-    nolimit: {
-      type: Boolean,
-      default () {
-        return true
-      }
-    },
     attr_name: {
       type: String,
       default () {
         return '属性名'
       }
+    },
+    initDate: {
+      type: Array,
+      default () {
+        return ['', '']
+      }
     }
   },
+  computed: {},
   methods: {
-    // 限制还是不限
-    noLimit () {
-      this.checked = !this.checked
-      if (this.checked) {
-        // 选中不限
-        this.$Message.info('选择不限，默认选项也就失效了哦o(*￣▽￣*)ブ')
-      } else {
-        this.$Message.info('不做任何选择，默认不限哦o(*￣▽￣*)ブ')
-      }
+    // 日期选择器
+    handleDatetime (val) {
+      this.datetime = val
     },
-    dim_change () {
-      console.log(this.dim, '---dim')
+    confirmDatetime () {
+      console.log(this.datetime)
+      this.comDate = JSON.parse(JSON.stringify(this.datetime))
+      console.log(this.comDate)
+      this.$emit('getData', this.comDate, this.attr_name)
+    },
+    day_clear () {
+      // const date = new Date()
+      // var fday
+      // if (date.getMonth() < 9) {
+      //   fday = date.getFullYear() + '-0' + (date.getMonth() + 1) + '-01'
+      // } else {
+      //   fday = date.getFullYear() + '-' + (date.getMonth() + 1) + '-01'
+      // }
+      // const now = formatDate(date, 'yyyy-MM-dd') // 初始化默认时间
+      // this.datetime = [fday, now]
+      this.datetime = ['', '']
+      this.comDate = JSON.parse(JSON.stringify(this.datetime))
+      this.$emit('getData', this.comDate, this.attr_name)
+    },
+    clearShortCut () {
+      const shortCut = document.querySelectorAll('.ivu-picker-panel-shortcut')
+      const len = shortCut.length
+      for (let i = 0; i < len; i++) {
+        shortCut[i].style.background = 'none'
+      }
     }
   },
   watch: {},
   created () {
+    setTimeout(() => {
+      this.datetime = deepCopy(this.initDate)
+      this.comDate = deepCopy(this.initDate)
+      this.confirmDatetime()
+    }, 1000)
   }
 }
 </script>
 <style lang="stylus" scoped>
-.ivu-row {
-  margin-top: 8px;
-}
-.ivu-btn {
-  margin-right: 10px
-}
-.ivu-select {
-  margin-right: 10px
-}
+// /deep/.ivu-picker-confirm>.ivu-btn:first-child {
+//   display: none;
+// }
 </style>
