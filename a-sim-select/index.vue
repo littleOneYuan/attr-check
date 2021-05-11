@@ -11,6 +11,7 @@
       <!-- 单层选择器 -->
       <Col flex="auto" class="sim-sel">
         <Csearch
+          v-if="!checked"
           :placeholder="btn_name"
           :trans_unselList="attr_List"
           :trans_selList="res_attr_List"
@@ -31,9 +32,9 @@ export default {
   },
   data () {
     return {
-      checked: true,
-      attr_List: deepCopy(this.attrList),
-      res_attr_List: [],
+      checked: false,
+      attr_List: [],
+      res_attr_List: deepCopy(this.init_selList),
       sel_attr_List: []
     }
   },
@@ -61,6 +62,12 @@ export default {
       default () {
         return []
       }
+    },
+    init_selList: {
+      type: Array,
+      default () {
+        return []
+      }
     }
   },
   computed: {},
@@ -70,8 +77,7 @@ export default {
       this.checked = !this.checked
       if (this.checked) {
         // 选中不限
-        this.checked_attr = []
-        this.$emit('getData', [], this.attr_name)
+        this.$emit('getData', [], [], this.attr_name)
       } else {
         this.$Message.info('不做任何选择，默认不限哦o(*￣▽￣*)ブ')
       }
@@ -83,7 +89,12 @@ export default {
     }
   },
   watch: {},
-  created () {}
+  created () {
+    setTimeout(() => {
+      this.attr_List = deepCopy(this.attrList)
+      this.res_attr_List = deepCopy(this.init_selList)
+    }, 1000)
+  }
 }
 </script>
 <style lang="stylus" scoped>
