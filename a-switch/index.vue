@@ -53,6 +53,12 @@ export default {
       default () {
         return []
       }
+    },
+    initList: {
+      type: Array,
+      default () {
+        return []
+      }
     }
   },
   computed: {},
@@ -86,7 +92,19 @@ export default {
     }
   },
   watch: {},
-  created () {}
+  created () {
+    setTimeout(() => {
+      this.switchList = deepCopy(this.attrList)
+      if (this.initList.length > 0) {
+        this.switchList.forEach((item) => {
+          if (this.initList.includes(item.label)) {
+            item.checked = true
+          }
+        })
+        this.switch_handle()
+      }
+    }, 1000)
+  }
 }
 </script>
 <style lang="stylus" scoped>
