@@ -33,16 +33,22 @@
               </Select>
               <InputNumber
                 v-if="item.seedim !== 3 && item.scompare !== 7"
-                :min="1"
+                :precision="0"
+                :min="0"
                 v-model="item.sNum"
                 @on-blur="get_sNum(item.sNum, index)"
               ></InputNumber>
-              <nToN
+              <!-- <nToN
                 v-if="item.seedim !== 3 && item.scompare === 7"
                 :initNum="item.seerange"
                 @func="see_setData($event, index)"
                 :num-flag="1"
-              ></nToN>
+              ></nToN> -->
+              <ci-ntn
+                v-if="item.seedim !== 3 && item.scompare === 7"
+                :initNum="item.seerange"
+                @func="see_setData($event, index)"
+              ></ci-ntn>
               <Select
                 v-if="item.seedim !== 3"
                 v-model="item.suffix"
@@ -72,7 +78,7 @@
                 >
               </Select>
               <date-pick
-                v-if="item.selsuf_type === 'time'"
+                v-if="item.seedim === 3 && item.selsuf_type === 'time'"
                 type="daterange"
                 :value="item.datetime"
                 :options="datetimeOption"
@@ -90,7 +96,7 @@
                 style="width: 200px"
               />
               <Select
-                v-if="item.selsuf_type === 'num'"
+                v-if="item.seedim !== 3 || item.selsuf_type === 'num'"
                 v-model="item.compare"
                 style="width: 80px"
                 @on-open-change="com_change($event, item.compare, index)"
@@ -103,23 +109,33 @@
                 >
               </Select>
               <InputNumber
-                v-if="item.selsuf_type === 'num' && item.compare !== 7"
-                :max="10"
-                :min="1"
+                v-if="
+                  (item.seedim !== 3 && item.compare !== 7) ||
+                  (item.selsuf_type === 'num' && item.compare !== 7)
+                "
+                :min="0"
+                :precision="2"
                 v-model="item.cNum"
                 @on-blur="get_cNum(item.cNum, index)"
               ></InputNumber>
-              <nToN
+              <!-- <nToN
                 v-if="item.selsuf_type === 'num' && item.compare === 7"
                 :initNum="item.comrange"
                 @func="com_setData($event, index)"
                 :num-flag="1"
-              ></nToN>
+              ></nToN> -->
+              <c-ntn
+                v-if="
+                  (item.seedim !== 3 && item.compare === 7) ||
+                  (item.selsuf_type === 'num' && item.compare === 7)
+                "
+                :initNum="item.comrange"
+                @func="com_setData($event, index)"
+              ></c-ntn>
               <Button
                 type="primary"
                 icon="md-close"
                 ghost
-                :disabled="index === 0"
                 @click="handleRemove(item, index)"
               ></Button>
               <Button
@@ -135,6 +151,9 @@
       <FormItem>
         <Row style="margin-bottom: 0px">
           <Col span="3">
+            <Button type="primary" @click="allConfirm">一键校验</Button>
+          </Col>
+          <Col span="3">
             <Button type="dashed" @click="handleAdd" icon="md-add">增加条件</Button>
           </Col>
         </Row>
@@ -147,13 +166,16 @@
 import shortcuts from '@/data/shortcuts'
 import DatePick from '@/components/date-picker'
 import attrBox from '@/data/user/attr_box'
-import nToN from '@/components/numtonum/nToN'
-import { ntnData_handle, commit_range_handle, deepCopy } from '@/common/js/c_common'
+import cNtn from '@/components/c-ntn'
+import ciNtn from '@/components/ci-ntn'
+// import nToN from '@/components/numtonum/nToN'
+import { cntnData_handle, c_commit_range_handle, deepCopy } from '@/common/js/c_common'
 export default {
   name: 'add-condition',
   components: {
     DatePick,
-    nToN
+    cNtn,
+    ciNtn
   },
   props: {
     attr_name: {
@@ -223,8 +245,8 @@ export default {
         scompare_label: '>',
         sNum: 3,
         seerange: {
-          minNum: '',
-          maxNum: ''
+          min: null,
+          max: null
         },
         seerange_content: '',
         suffix: '',
@@ -238,8 +260,8 @@ export default {
         compare_label: '>',
         cNum: 3,
         comrange: {
-          minNum: '',
-          maxNum: ''
+          min: null,
+          max: null
         },
         comrange_content: '',
         tip_show: false,
@@ -281,20 +303,15 @@ export default {
       }
     },
     see_setData (data, idx) {
-      var seeContent = ntnData_handle(data).content
-      var seeRange = ntnData_handle(data).range
-      console.log(seeContent, '---seeContent')
-      console.log(seeRange, '---seeRange')
+      var seeContent = cntnData_handle(data).content
+      var seeRange = cntnData_handle(data).range
       this.formAttr.item[idx].seerange = seeRange
       this.formAttr.item[idx].seerange_content = seeContent
     },
     suffix_change (open, suffix, idx) {
       if (!open && typeof suffix === 'number') {
         var label = ''
-        console.log(suffix, '--suffix')
-        console.log(typeof suffix, '--suffix')
         label = this.sufList.find((item) => item.value === suffix).label
-        console.log(label, '---suffix_label')
         this.formAttr.item[idx].suffix_label = label
       }
     },
@@ -302,9 +319,15 @@ export default {
       if (!open) {
         var label = ''
         label = this.selsufList.find((item) => item.value === selsuf).label
-        console.log(label, '---selsuf_label')
         this.formAttr.item[idx].selsuf_label = label
         this.formAttr.item[idx].selsuf_type = label.includes('时间') ? 'time' : 'num'
+        if (label === '累计总活跃率') {
+          this.$Message.warning({
+            closable: true,
+            duration: 6,
+            content: `${label}: 请输入0-100内的数字范围哦o(*￣▽￣*)ブ BI将自动为您计算百分比%`
+          })
+        }
       }
     },
     com_change (open, compare, idx) {
@@ -324,15 +347,12 @@ export default {
       }
     },
     com_setData (data, idx) {
-      var comContent = ntnData_handle(data).content
-      var comRange = ntnData_handle(data).range
-      console.log(comContent, '---comContent')
-      console.log(comRange, '---comRange')
+      var comContent = cntnData_handle(data).content
+      var comRange = cntnData_handle(data).range
       this.formAttr.item[idx].comrange = comRange
       this.formAttr.item[idx].comrange_content = comContent
     },
     handleConfirm (line, index) {
-      console.log(line, '---line', index)
       this.data_handel_emit(line, index)
     },
     data_handel_emit (line, idx) {
@@ -535,14 +555,12 @@ export default {
       this.formAttr.item[idx].comDate = JSON.parse(
         JSON.stringify(this.formAttr.item[idx].datetime)
       )
-      // this.$emit('getData', this.comDate, this.attr_name)
     },
     day_clear (idx) {
       this.formAttr.item[idx].datetime = ['', '']
       this.formAttr.item[idx].comDate = JSON.parse(
         JSON.stringify(this.formAttr.item[idx].datetime)
       )
-      // this.$emit('getData', this.comDate, this.attr_name)
     },
     clearShortCut () {
       const shortCut = document.querySelectorAll('.ivu-picker-panel-shortcut')
@@ -550,12 +568,18 @@ export default {
       for (let i = 0; i < len; i++) {
         shortCut[i].style.background = 'none'
       }
+    },
+    // 一键校验
+    allConfirm () {
+      this.formAttr.item.forEach((line) => {
+        if (line.status) {
+          var line_copy = deepCopy(line)
+          this.handleConfirm(line_copy, line_copy.index - 1)
+        }
+      })
     }
   },
-  watch: {},
   created () {
-    // this.formAttr.item = this.initData
-    console.log(this.formAttr, '---this.formAttr')
     // 赋初值
     setTimeout(() => {
       if (!this.isCreate) {
@@ -568,8 +592,8 @@ export default {
           this.scom_change(false, line.scompare, idx)
           this.com_change(false, line.compare, idx)
           var line_copy = deepCopy(line)
-          line_copy.seerange = commit_range_handle(line_copy.seerange)
-          line_copy.comrange = commit_range_handle(line_copy.comrange)
+          line_copy.seerange = c_commit_range_handle(line_copy.seerange)
+          line_copy.comrange = c_commit_range_handle(line_copy.comrange)
           this.handleConfirm(line_copy, idx)
           idx++
         })
