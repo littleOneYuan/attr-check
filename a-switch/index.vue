@@ -4,7 +4,7 @@
       <Col flex="110px">
         <span class="c-fix-title wt">{{ attr_name }}</span>
       </Col>
-      <Col flex="90px" v-if="nolimit">
+      <Col flex="90px">
         <Button v-if="checked" type="primary" @click="noLimit">不限</Button>
         <Button v-else @click="noLimit">不限</Button>
       </Col>
@@ -36,12 +36,6 @@ export default {
     }
   },
   props: {
-    nolimit: {
-      type: Boolean,
-      default () {
-        return true
-      }
-    },
     attr_name: {
       type: String,
       default () {
