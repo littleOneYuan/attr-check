@@ -2,7 +2,7 @@
   <div class="main-container">
     <div>
       <div class="filter-group">
-        <RadioGroup v-model="d_group" type="button">
+        <RadioGroup v-model="d_group" type="button" @on-change="query">
           <Radio label="全部"></Radio>
           <Radio label="我创建的"></Radio>
         </RadioGroup>
@@ -139,7 +139,9 @@
                   <DropdownItem v-if="['0', '2'].includes(scope.row.status)" name="delete"
                     >删除</DropdownItem
                   >
-                  <DropdownItem v-if="scope.row.status === '0'" name="redo"
+                  <DropdownItem
+                    v-if="scope.row.status === '0' && scope.row.grouptype === '1'"
+                    name="redo"
                     >重新执行</DropdownItem
                   >
                 </DropdownMenu>
@@ -203,7 +205,7 @@ export default {
     return {
       group: '',
       rule_motion: 'create',
-      copy_groupId: '',
+      copy_groupId: 0,
       groupId: '',
       groupName: '',
       groupFlag: 'select',
@@ -254,12 +256,10 @@ export default {
     // 来源分析
     srcAnalyze (idx, row) {},
     more_handle (option, row) {
-      console.log(option)
-      console.log(row)
       // window.open(`http://${path}`, '_blank')
       if (option === 'export') {
         // 导出
-        window.open(`http://${row.filePath}`, '_blank')
+        window.open(`${row.filePath}`, '_blank')
       } else if (option === 'refresh') {
         // 刷新
       } else if (option === 'copy') {
@@ -279,8 +279,8 @@ export default {
     },
     retryUserGroup () {
       retryUserGroup({ group_id: this.copy_groupId }).then((data) => {
-        if (data) {
-          this.$Message.success(data)
+        if (data.msg) {
+          this.$Message.success(data.msg)
           this.query()
         }
       })
@@ -297,6 +297,7 @@ export default {
       this.rule_show = show.status
       if (show.msg !== '') {
         this.$Message.success(show.msg)
+        this.getUserGroupIdAndName()
         this.query()
       }
     },
@@ -338,7 +339,6 @@ export default {
     // 拿到选择的group
     get_group_select (open) {
       if (!open && typeof this.group === 'number') {
-        console.log(this.group, '---this.group')
         // 在关闭的时候操作
         if (this.groupFlag === 'select') {
           this.groupId = this.group
@@ -350,15 +350,11 @@ export default {
     // 拿到选择的people
     getPeople_List (list, first) {
       this.sel_People_List = list
-      console.log(this.sel_People_List, '---this.sel_People_List')
       // if (list && !first) {
       // setTimeout(() => {
       //   this.query()
       // }, 500)
       // }
-    },
-    handleClick (row) {
-      console.log(row)
     },
     // 查询
     query () {
@@ -374,12 +370,14 @@ export default {
         pageNum: this.flag ? this.currentPage : 1,
         pageSize: this.pageSize
       }).then((data) => {
-        // console.log(data, '---getUserGroups')
         if (data && data.row && data.row.length > 0) {
           data.row.forEach((r) => {
             r.createTime = r.createTime ? parseTime(r.createTime, '{y}-{m}-{d}') : ''
             r.updateTime = r.updateTime ? parseTime(r.updateTime, '{y}-{m}-{d}') : ''
           })
+          this.total = data.total
+          this.tableData = data.row
+        } else if (data && data.row && data.row.length === 0) {
           this.total = data.total
           this.tableData = data.row
         }
@@ -421,7 +419,7 @@ export default {
     uploadFile (file) {
       importUserGroup({ file }).then((data) => {
         if (data && typeof data !== 'symbol') {
-          // console.log(data,'---data')
+          this.query()
         }
       })
     },
@@ -429,7 +427,6 @@ export default {
     getUserAndDepartmentName () {
       getUserAndDepartmentName().then((data) => {
         if (data && typeof data !== 'symbol') {
-          // console.log(data, '---peopledata')
           this.People_List = this.selectedList_handle(data)
         }
       })
@@ -438,7 +435,6 @@ export default {
     getUserGroupIdAndName () {
       getUserGroupIdAndName().then((data) => {
         if (data && typeof data !== 'symbol') {
-          // console.log(data, '---groupdata')
           data.forEach((item) => {
             this.groupList.push({
               value: item.id,
