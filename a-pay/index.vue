@@ -17,7 +17,7 @@
           >{{ btn_name }}</Button
         >
         <Button v-if="select_show && !checked" type="primary" @click="select_confirm"
-          >确认</Button
+          >点我选项生效！！！</Button
         >
         <Select
           v-if="!checked"
@@ -58,9 +58,21 @@
 <script>
 import attrBox from '@/data/user/attr_box'
 import cCompare from '@/components/c-compare'
-import { gameGroup_handle, set_gameGroup } from '@/common/js/c_common'
+import {
+  gameGroup_handle,
+  set_gameGroupcopy,
+  gameGroup_tail,
+  deepCopy,
+  c_init_range_handle,
+  c_commit_range_handle
+} from '@/common/js/c_common'
 import Selecter from '@/components/select/selecter.vue'
-import { findCheck, getNameOfData, clearTagOfData, deepCopy } from '@/common/js/utils'
+import {
+  findCheck,
+  getNameOfData,
+  clearTagOfData,
+  getKeyOfData
+} from '@/common/js/utils'
 export default {
   name: 'a-pay',
   components: {
@@ -74,21 +86,21 @@ export default {
       Msg: '',
       tip_show: false,
       spinShow: false,
-      checked: false,
+      checked: true,
       init_judge: this.initData.judge,
       judgeNum: this.initData.judgeNum,
       init_num: deepCopy(this.initData.judgeRange),
       judgeValue: '',
       judgeLabel: '',
       rangeContent: '',
-      judgeRange: null,
+      judgeRange: '',
       select_show: false,
       selectList: [],
       select_init: [],
       selectLabels: [],
       selectKeys: [],
       selectIds: [],
-      selectedList: deepCopy(this.initData.selList),
+      selectedList: [],
       dimList: deepCopy(attrBox.dimList)
     }
   },
@@ -122,9 +134,9 @@ export default {
       default () {
         return {
           selList: [],
-          dim: null,
-          judge: null,
-          judgeNum: null,
+          dim: 0,
+          judge: 0,
+          judgeNum: 0,
           judgeRange: {
             minNum: '',
             maxNum: ''
@@ -157,7 +169,8 @@ export default {
     },
     // 删除已选
     delTag ({ list, name }) {
-      const data = getNameOfData(list, name)
+      // 这里的name其实已经是key了
+      const data = getKeyOfData(list, 'key', name)
       if (data.children && data.children.length) {
         this.selectAll({ list, check: false, current: data.value })
       } else {
@@ -183,15 +196,17 @@ export default {
     },
     select_confirm () {
       this.select_show = !this.select_show
-      this.selectIds = gameGroup_handle(this.selectList).ids_arr
+      this.selectIds = gameGroup_tail(this.selectList).ids_arr
       this.selectKeys = gameGroup_handle(this.selectList).keys_arr
       this.selectLabels = gameGroup_handle(this.selectList).labels_arr
       this.data_handel_emit()
       // this.$emit('getData', this.selectKeys, this.selectLabels, this.attr_name)
     },
-    dim_change () {
-      this.dimLabel = this.dimList.find((item) => item.value === this.dim).label
-      this.data_handel_emit()
+    dim_change (open) {
+      if (!open) {
+        this.dimLabel = this.dimList.find((item) => item.value === this.dim).label
+        this.data_handel_emit()
+      }
     },
     // 限制还是不限
     noLimit () {
@@ -258,7 +273,7 @@ export default {
             dim: this.dim,
             dimLabel: this.dimLabel,
             judge: 7,
-            judgeRange: this.judgeRange,
+            judgeRange: c_commit_range_handle(this.judgeRange),
             rangeContent: this.rangeContent,
             nolimit: false
           }
@@ -289,11 +304,13 @@ export default {
       this.select_init = deepCopy(n)
       if (this.selectedList.length > 0) {
         this.clearTag({ list: this.selectList })
-        this.selectList = set_gameGroup(
+        set_gameGroupcopy(
           this.selectedList ? this.selectedList : [],
-          this.select_init
+          this.selectList,
+          false,
+          this
         )
-        this.selectIds = gameGroup_handle(this.selectList).ids_arr
+        this.selectIds = gameGroup_tail(this.selectList).ids_arr
         this.selectKeys = gameGroup_handle(this.selectList).keys_arr
         this.select_confirm()
         this.select_show = true
@@ -308,14 +325,17 @@ export default {
       this.dim = this.initData.dim
       this.init_judge = this.initData.judge
       this.judgeNum = this.initData.judgeNum
-      this.init_num = deepCopy(this.initData.judgeRange)
+      this.init_num = c_init_range_handle(this.initData.judgeRange)
       if (this.selectedList.length > 0) {
+        this.checked = false
         this.clearTag({ list: this.selectList })
-        this.selectList = set_gameGroup(
+        set_gameGroupcopy(
           this.selectedList ? this.selectedList : [],
-          this.select_init
+          this.selectList,
+          false,
+          this
         )
-        this.selectIds = gameGroup_handle(this.selectList).ids_arr
+        this.selectIds = gameGroup_tail(this.selectList).ids_arr
         this.selectKeys = gameGroup_handle(this.selectList).keys_arr
         this.select_confirm()
         this.select_show = true
