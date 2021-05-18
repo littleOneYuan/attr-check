@@ -24,7 +24,7 @@
 </template>
 <script>
 import cCompare from '@/components/c-compare'
-import { deepCopy } from '@/common/js/utils'
+import { deepCopy } from '@/common/js/c_common'
 export default {
   name: 'a-compare',
   components: {
@@ -32,7 +32,7 @@ export default {
   },
   data () {
     return {
-      checked: false,
+      checked: true,
       init_num: deepCopy(this.initData.judgeRange),
       init_judge: this.initData.judge,
       judgeNum: this.initData.judgeNum,
@@ -57,11 +57,11 @@ export default {
       type: Object,
       default () {
         return {
-          judge: '',
-          judgeNum: '',
+          judge: 0,
+          judgeNum: 0,
           judgeRange: {
-            minNum: '',
-            maxNum: ''
+            min: null,
+            max: null
           }
         }
       }
@@ -97,13 +97,12 @@ export default {
       this.checked = false
       var resObj = {}
       if (this.judgeNum === Infinity || this.judgeNum === 1e30) {
-        debugger
         this.Msg = 'Tips：您输入的数值过大o(╥﹏╥)o请重新输入哦~~'
         this.tip_show = true
       } else {
         if (this.tip_show) this.tip_show = false
       }
-      if (content) {
+      if (judge === 7) {
         // range
         resObj.content = content
         resObj.val = {
@@ -130,7 +129,13 @@ export default {
   },
   watch: {},
   created () {
+    if (this.initData.judge !== 0) {
+      this.checked = false
+    }
     setTimeout(() => {
+      if (this.initData.judge !== 0) {
+        this.checked = false
+      }
       this.init_num = deepCopy(this.initData.judgeRange)
       this.init_judge = this.initData.judge
       this.judgeNum = this.initData.judgeNum
