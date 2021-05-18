@@ -32,7 +32,7 @@ export default {
   },
   data () {
     return {
-      checked: false,
+      checked: true,
       attr_List: [],
       res_attr_List: deepCopy(this.init_selList),
       sel_attr_List: []
@@ -70,7 +70,6 @@ export default {
       }
     }
   },
-  computed: {},
   methods: {
     // 限制还是不限
     noLimit () {
@@ -91,6 +90,7 @@ export default {
   watch: {},
   created () {
     setTimeout(() => {
+      this.checked = false
       this.attr_List = deepCopy(this.attrList)
       this.res_attr_List = deepCopy(this.init_selList)
     }, 1000)
