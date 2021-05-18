@@ -200,8 +200,8 @@ export default {
       scompare_label: '>',
       sNum: 3,
       seerange: {
-        minNum: '',
-        maxNum: ''
+        min: null,
+        max: null
       },
       seerange_content: '',
       suffix: '',
@@ -215,8 +215,8 @@ export default {
       compare_label: '>',
       cNum: 3,
       comrange: {
-        minNum: '',
-        maxNum: ''
+        min: null,
+        max: null
       },
       comrange_content: '',
       tip_show: false,
