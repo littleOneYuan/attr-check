@@ -23,7 +23,7 @@
   </div>
 </template>
 <script>
-import { deepCopy } from '@/common/js/utils'
+import { deepCopy } from '@/common/js/c_common'
 export default {
   name: 'a-check',
   components: {},
