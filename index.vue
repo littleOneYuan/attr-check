@@ -129,38 +129,38 @@
   </div>
 </template>
 <script>
-import shortcuts from '@/data/shortcuts'
-import DatePick from '@/components/date-picker'
-import Csearch from '@/components/c-search/index.vue'
-import nToN from '@/components/numtonum/nToN'
-import cCompare from '@/components/c-compare'
-import attrBox from '@/data/user/attr_box'
-import Selecter from '@/components/select/selecter.vue'
+import shortcuts from "@/data/shortcuts";
+import DatePick from "@/components/date-picker";
+import Csearch from "@/components/c-search/index.vue";
+import nToN from "@/components/numtonum/nToN";
+import cCompare from "@/components/c-compare";
+import attrBox from "@/data/user/attr_box";
+import Selecter from "@/components/select/selecter.vue";
 import {
   findCheck,
   formatDate,
   getNameOfData,
   clearTagOfData,
-  deepCopy
-} from '@/common/js/utils'
+  deepCopy,
+} from "@/common/js/utils";
 export default {
-  name: 'attr-check',
+  name: "attr-check",
   components: {
     nToN,
     Csearch,
     DatePick,
     cCompare,
-    Selecter
+    Selecter,
   },
-  data () {
-    const date = new Date()
-    var fday
+  data() {
+    const date = new Date();
+    var fday;
     if (date.getMonth() < 9) {
-      fday = date.getFullYear() + '-0' + (date.getMonth() + 1) + '-01'
+      fday = date.getFullYear() + "-0" + (date.getMonth() + 1) + "-01";
     } else {
-      fday = date.getFullYear() + '-' + (date.getMonth() + 1) + '-01'
+      fday = date.getFullYear() + "-" + (date.getMonth() + 1) + "-01";
     }
-    const now = formatDate(date, 'yyyy-MM-dd') // 初始化默认时间
+    const now = formatDate(date, "yyyy-MM-dd"); // 初始化默认时间
     return {
       select_show: false,
       select_show2: false,
@@ -181,175 +181,173 @@ export default {
       comDate: [fday, now],
       datetimeOption: {
         shortcuts,
-        disabledDate (date) {
-          return date && date.valueOf() > Date.now()
-        }
-      }
-    }
+        disabledDate(date) {
+          return date && date.valueOf() > Date.now();
+        },
+      },
+    };
   },
   props: {
     atype: {
       type: String,
-      default () {
-        return 'check'
-      }
+      default() {
+        return "check";
+      },
     },
     nolimit: {
       type: Boolean,
-      default () {
-        return true
-      }
+      default() {
+        return true;
+      },
     },
     attr_name: {
       type: String,
-      default () {
-        return '属性名'
-      }
+      default() {
+        return "属性名";
+      },
     },
     attrList: {
       type: Array,
-      default () {
-        return []
-      }
+      default() {
+        return [];
+      },
     },
     attrList2: {
       type: Array,
-      default () {
-        return []
-      }
+      default() {
+        return [];
+      },
     },
     btn_name: {
       type: Array,
-      default () {
-        return ['选择器']
-      }
-    }
+      default() {
+        return ["选择器"];
+      },
+    },
   },
   computed: {
-    mult_group () {
-      return findCheck(this.attrList)
+    mult_group() {
+      return findCheck(this.attrList);
     },
-    mult_group2 () {
-      return findCheck(this.attrList2)
-    }
+    mult_group2() {
+      return findCheck(this.attrList2);
+    },
   },
   methods: {
     // 全选
-    selectAll ({ list, check = true, current = '' }) {
-      let data
+    selectAll({ list, check = true, current = "" }) {
+      let data;
       if (current) {
-        const item = getNameOfData(list, current)
-        data = item.children
-      } else data = list
+        const item = getNameOfData(list, current);
+        data = item.children;
+      } else data = list;
       data.forEach((ret) => {
         if (ret.children && ret.children.length) {
           ret.children.map((rec) => {
-            this.$set(rec, 'check', check)
-            return rec
-          })
-        } else this.$set(ret, 'check', check)
-      })
+            this.$set(rec, "check", check);
+            return rec;
+          });
+        } else this.$set(ret, "check", check);
+      });
     },
     // 删除已选
-    delTag ({ list, name }) {
-      const data = getNameOfData(list, name)
+    delTag({ list, name }) {
+      const data = getNameOfData(list, name);
       if (data.children && data.children.length) {
-        this.selectAll({ list, check: false, current: data.value })
+        this.selectAll({ list, check: false, current: data.value });
       } else {
-        this.$set(data, 'check', false)
+        this.$set(data, "check", false);
       }
     },
     // 清空全部
-    clearTag ({ list }) {
-      clearTagOfData(list, this)
+    clearTag({ list }) {
+      clearTagOfData(list, this);
     },
     // 限制还是不限
-    noLimit () {
-      this.checked = !this.checked
+    noLimit() {
+      this.checked = !this.checked;
       if (this.checked) {
         // 选中不限
-        this.$Message.info('选择不限，默认选项也就失效了哦o(*￣▽￣*)ブ')
+        this.$Message.info("选择不限，默认选项也就失效了哦o(*￣▽￣*)ブ");
         // swith
-        if (this.atype === 'switch') {
+        if (this.atype === "switch") {
           this.switchList.forEach((item) => {
             if (item.checked) {
-              item.checked = false
+              item.checked = false;
             }
-          })
-          this.$emit('getData', [])
+          });
+          this.$emit("getData", []);
         }
         // swith
-        if (this.atype === 'check') {
-          this.checked_attr = []
-          this.$emit('getData', [], this.attr_name)
+        if (this.atype === "check") {
+          this.checked_attr = [];
+          this.$emit("getData", [], this.attr_name);
         }
       } else {
-        this.$Message.info('不做任何选择，默认不限哦o(*￣▽￣*)ブ')
+        this.$Message.info("不做任何选择，默认不限哦o(*￣▽￣*)ブ");
       }
     },
     // switch处理
-    switch_handle () {
-      var switchs = []
+    switch_handle() {
+      var switchs = [];
       this.switchList.forEach((item) => {
         if (item.checked) {
-          switchs.push(item.label)
+          switchs.push(item.label);
         }
-      })
-      if (switchs.length > 0) this.checked = false
-      if (switchs.length === 0) this.checked = true
-      this.$emit('getData', switchs)
+      });
+      if (switchs.length > 0) this.checked = false;
+      if (switchs.length === 0) this.checked = true;
+      this.$emit("getData", switchs);
     },
     // 选择属性check
-    check_attr () {
-      const checks = this.checked_attr
-      if (checks.length > 0) this.checked = false
-      if (checks.length === 0) this.checked = true
-      this.$emit('getData', checks, this.attr_name)
+    check_attr() {
+      const checks = this.checked_attr;
+      if (checks.length > 0) this.checked = false;
+      if (checks.length === 0) this.checked = true;
+      this.$emit("getData", checks, this.attr_name);
     },
     // 日期选择器
-    handleDatetime (val) {
-      this.datetime = val
+    handleDatetime(val) {
+      this.datetime = val;
     },
-    confirmDatetime () {
-      this.comDate = JSON.parse(JSON.stringify(this.datetime))
+    confirmDatetime() {
+      this.comDate = JSON.parse(JSON.stringify(this.datetime));
       setTimeout(() => {
-        this.ct_query()
-      }, 500)
+        this.ct_query();
+      }, 500);
     },
-    day_clear () {
-      const date = new Date()
-      var fday
+    day_clear() {
+      const date = new Date();
+      var fday;
       if (date.getMonth() < 9) {
-        fday = date.getFullYear() + '-0' + (date.getMonth() + 1) + '-01'
+        fday = date.getFullYear() + "-0" + (date.getMonth() + 1) + "-01";
       } else {
-        fday = date.getFullYear() + '-' + (date.getMonth() + 1) + '-01'
+        fday = date.getFullYear() + "-" + (date.getMonth() + 1) + "-01";
       }
-      const now = formatDate(date, 'yyyy-MM-dd') // 初始化默认时间
-      this.datetime = [fday, now]
-      this.comDate = JSON.parse(JSON.stringify(this.datetime))
+      const now = formatDate(date, "yyyy-MM-dd"); // 初始化默认时间
+      this.datetime = [fday, now];
+      this.comDate = JSON.parse(JSON.stringify(this.datetime));
     },
-    clearShortCut () {
-      const shortCut = document.querySelectorAll('.ivu-picker-panel-shortcut')
-      const len = shortCut.length
+    clearShortCut() {
+      const shortCut = document.querySelectorAll(".ivu-picker-panel-shortcut");
+      const len = shortCut.length;
       for (let i = 0; i < len; i++) {
-        shortCut[i].style.background = 'none'
+        shortCut[i].style.background = "none";
       }
     },
     // 拿到选择的属性
-    getAttr_List (list) {
-      this.sel_attr_List = list
+    getAttr_List(list) {
+      this.sel_attr_List = list;
     },
     // 拿到选择的属性2
-    getAttr_List2 (list) {
-      this.sel_attr_List2 = list
+    getAttr_List2(list) {
+      this.sel_attr_List2 = list;
     },
-    dim_change () {
-      console.log(this.dim, '---dim')
-    },
-    setData () {}
+    dim_change() {},
+    setData() {},
   },
   watch: {},
-  created () {
+  created() {
     // switch (this.atype) {
     //   case 'switch':
     //     this.switchList = deepCopy(this.attrList)
@@ -358,10 +356,13 @@ export default {
     //     this.checkList = deepCopy(this.attrList)
     //     break
     // }
-  }
-}
+  },
+};
 </script>
 <style lang="stylus" scoped>
+.ivu-checkbox-group {
+    display: inline-block;
+}
 .ivu-row {
   margin-top: 8px;
 }
