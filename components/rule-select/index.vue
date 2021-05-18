@@ -136,13 +136,14 @@
             <div v-show="cur_attr === '平台属性'">
               <span class="c-fix-title wt">当前正在筛选：平台属性</span>
               <Divider />
+
               <aSwitch
                 attr_name="平台信息"
                 :attrList="attrList.pfInfoList"
                 :initList="init_pfInfoList"
                 @getData="switchs_get"
               />
-              <aCompare
+              <aiCompare
                 attr_name="VIP等级"
                 :initData="init_vip_level"
                 @getData="level_get"
@@ -162,11 +163,22 @@
                 @getData="pay_get"
               ></aPay>
               <aTime attr_name="生日" :initDate="init_pBirth" @getData="time_get" />
-              <aNtn attr_name="草花豆" :initNum="init_ch_bean" @getData="ntn_get" />
-              <aNtn attr_name="草花币" :initNum="init_ch_coin" @getData="ntn_get" />
+              <dNtn attr_name="草花豆" :initNum="init_ch_bean" @getData="ntn_get" />
+              <dNtn attr_name="草花币" :initNum="init_ch_coin" @getData="ntn_get" />
             </div>
             <div v-show="cur_attr === '用户行为'">
               <span class="c-fix-title wt">当前正在筛选：用户行为</span>
+              <span v-show="tiptip" class="tiptip"
+                >注意！！！条件校验后才会生效，可选择“一键校验”或者“单条校验”（点击每行后的“√”）</span
+              >
+              <Poptip
+                placement="bottom"
+                trigger="hover"
+                title="隐藏提示"
+                content="强迫症患者点击"
+              >
+                <Icon type="md-bulb" class="tip-ctrl" @click="tiptip = !tiptip" />
+              </Poptip>
               <Divider />
               <addCondition
                 attr_name="活跃"
@@ -192,7 +204,9 @@
         <Footer align="right">
           <Button @click="cancel">取 消</Button>
           <Button type="primary" ghost @click="preview">画像预览</Button>
-          <Button type="primary" @click="computePeople">预计人数</Button>
+          <Button type="primary" @click="computePeople" :loading="computeLoading">{{
+            computeText
+          }}</Button>
           <Button type="success" @click="production">生 产</Button>
         </Footer>
       </Layout>
@@ -229,21 +243,36 @@ import attrBox from '@/data/user/attr_box'
 import peopleObj from '@/data/user/peopleObj'
 import preview_attr from '@/data/user/preview_attr'
 // import attrCheck from '@/components/attr-check'
-import aNtn from '@/components/attr-check/a-ntn'
+// import aNtn from '@/components/attr-check/a-ntn'
+import dNtn from '@/components/attr-check/d-ntn'
 import aPay from '@/components/attr-check/a-pay'
 import aTime from '@/components/attr-check/a-time'
 import aCheck from '@/components/attr-check/a-check'
 import aSelect from '@/components/attr-check/a-select'
-import aCompare from '@/components/attr-check/a-compare'
+import aiCompare from '@/components/attr-check/ai-compare'
 import aSimSelect from '@/components/attr-check/a-sim-select'
 import aSwitch from '@/components/attr-check/a-switch'
 import cBtn from '@/components/c-btn'
 import addCondition from '@/components/addCondition'
-import cityData from '@/data/toutiao/city_province'
+// import cityData from '@/data/toutiao/city_province'
 // import people from '@/data/user/people'
-import { isArray, unique, deepCopy, init_range_handle } from '@/common/js/c_common'
+import { isArray, unique, deepCopy, c_init_range_handle } from '@/common/js/c_common'
 export default {
   name: 'rule-select',
+  components: {
+    cBtn,
+    aPay,
+    // aNtn,
+    dNtn,
+    aTime,
+    aSelect,
+    aCheck,
+    aSwitch,
+    aiCompare,
+    // attrCheck,
+    aSimSelect,
+    addCondition
+  },
   props: {
     rule_motion: {
       type: String,
@@ -254,15 +283,18 @@ export default {
     groupId: {
       type: Number,
       default () {
-        return null
+        return 0
       }
     }
   },
   data () {
     const { init_form } = attrBox
     return {
+      tiptip: true,
       gameData: [],
       spinShow: false,
+      computeText: '预计人数',
+      computeLoading: false,
       channelData: [],
       init_pfList: [],
       init_pfInfoList: [],
@@ -276,30 +308,30 @@ export default {
       init_login_state: deepCopy(init_form),
       init_recharge_state: deepCopy(init_form),
       init_vip_level: {
-        judge: null,
-        judgeNum: null,
+        judge: 0,
+        judgeNum: 0,
         judgeRange: {
-          minNum: '',
-          maxNum: ''
+          min: null,
+          max: null
         }
       },
       init_pay_info: {
         selList: [],
-        dim: null,
-        judge: null,
-        judgeNum: null,
+        dim: 0,
+        judge: 0,
+        judgeNum: 0,
         judgeRange: {
-          minNum: '',
-          maxNum: ''
+          min: null,
+          max: null
         }
       },
       init_ch_bean: {
-        minNum: '',
-        maxNum: ''
+        min: null,
+        max: null
       },
       init_ch_coin: {
-        minNum: '',
-        maxNum: ''
+        min: null,
+        max: null
       },
       attrs: attrBox.attrs,
       groupObj: deepCopy(peopleObj),
@@ -314,36 +346,12 @@ export default {
       bhv_attr: [''],
       attrList: attrBox,
       previewAttr: deepCopy(preview_attr),
-      cityData: cityData,
       motion: 0,
       active_create: true,
       login_create: true,
       recharge_create: true,
-      sim_select: [
-        {
-          value: 1,
-          label: '选项一'
-        },
-        {
-          value: 2,
-          label: '选项二'
-        }
-      ],
       vipServiceList: []
     }
-  },
-  components: {
-    cBtn,
-    aPay,
-    aNtn,
-    aTime,
-    aSelect,
-    aCheck,
-    aSwitch,
-    aCompare,
-    // attrCheck,
-    aSimSelect,
-    addCondition
   },
   computed: {
     da_style () {
@@ -502,7 +510,6 @@ export default {
       }
     },
     sim_select_get (ids, labels, attr_name) {
-      console.log(labels, 'sim_select_get')
       if (labels && isArray(labels)) {
         var content
         var nolimit = false
@@ -552,7 +559,6 @@ export default {
       }
     },
     pay_get (resObj, attr_name) {
-      console.log(resObj.content)
       var content
       var obj
       if (resObj === '不限' || resObj.content === 'null' || resObj.content === '') {
@@ -576,7 +582,6 @@ export default {
       }
     },
     addC_get (resObjArr, attr_name) {
-      console.log(resObjArr, '---resObjArr')
       var content
       var obj
       if (resObjArr === '不限') {
@@ -623,33 +628,48 @@ export default {
     // 预计人数
     computePeople () {
       getUserGroupPreview(this.groupObj).then((data) => {
-        this.$Message.success(`BI已为您预估当前条件生产的人群数是：${data} 人 (*^▽^*)`)
+        this.computeLoading = true
+        this.computeText = '等待中'
+        if (typeof data === 'number') {
+          this.computeText = '预计人数'
+          this.computeLoading = false
+          this.$Message.success(`BI已为您预估当前条件生产的人群数是：${data} 人 (*^▽^*)`)
 
-        this.previewAttr.some((item) => {
-          if (item.attr_key === 'pre_num') {
-            item.attr_content = `${data} 人`
-          }
+          this.previewAttr.some((item) => {
+            if (item.attr_key === 'pre_num') {
+              item.attr_content = `${data} 人`
+            }
+          })
+        }
+        setTimeout(() => {
+          this.computeLoading = false
+          this.computeText = '预计人数'
         })
       })
     },
     // 生产
     production () {
-      console.log(this.groupObj, '---groupObj')
-      var req = {
-        rule_name: this.rule_name,
-        description: this.description,
-        condition: this.groupObj
-      }
-      addOrUpdateUserGroup(req).then((data) => {
-        if (data.msg === '成功！') {
-          this.$emit('showfun', {
-            status: false,
-            msg: '您的人群已创建成功(๑•̀ㅂ•́)و✧'
-          })
-        } else {
-          this.$Message.error('人群创建失败o(╥﹏╥)o')
+      if (this.rule_name === '') {
+        this.$Message.warning('您忘记输入人群名称了哦o(╥﹏╥)o')
+      } else if (this.description === '') {
+        this.$Message.warning('您忘记输入人群描述了哦o(╥﹏╥)o')
+      } else {
+        var req = {
+          rule_name: this.rule_name,
+          description: this.description,
+          condition: this.groupObj
         }
-      })
+        addOrUpdateUserGroup(req).then((data) => {
+          if (data.msg === '成功！') {
+            this.$emit('showfun', {
+              status: false,
+              msg: '您的人群已创建成功(๑•̀ㅂ•́)و✧'
+            })
+          } else {
+            this.$Message.error('人群创建失败o(╥﹏╥)o')
+          }
+        })
+      }
     },
     name_handle (motion) {
       if (motion === 'confirm') {
@@ -680,7 +700,6 @@ export default {
       initEditUserGroup({
         group_id: this.groupId
       }).then((data) => {
-        console.log(data)
         this.active_create = false
         this.login_create = false
         this.recharge_create = false
@@ -699,7 +718,6 @@ export default {
         this.init_pfList = dev_feature.p_pf.nolimit
           ? this.init_pfList
           : dev_feature.p_pf.val
-        console.log(this.init_pfList, '--this.init_pfList')
         this.init_operatorList = dev_feature.operator.nolimit
           ? this.init_operatorList
           : dev_feature.operator.val
@@ -727,12 +745,12 @@ export default {
             judgeRange:
                 pfinfo_attr.vip_level.judge === 7
                   ? {
-                    minNum: pfinfo_attr.vip_level.judgeRange.min,
-                    maxNum: pfinfo_attr.vip_level.judgeRange.max
+                    min: Number(pfinfo_attr.vip_level.judgeRange.min),
+                    max: Number(pfinfo_attr.vip_level.judgeRange.max)
                   }
                   : {
-                    minNum: '',
-                    maxNum: ''
+                    min: null,
+                    max: null
                   }
           }
         this.init_vip_service = pfinfo_attr.vip_service.nolimit
@@ -748,13 +766,10 @@ export default {
                 pfinfo_attr.pay_info.judge !== 7 ? pfinfo_attr.pay_info.judgeNum : null,
             judgeRange:
                 pfinfo_attr.pay_info.judge === 7
-                  ? {
-                    minNum: pfinfo_attr.pay_info.judgeRange.min,
-                    maxNum: pfinfo_attr.pay_info.judgeRange.max
-                  }
+                  ? c_init_range_handle(pfinfo_attr.pay_info.judgeRange)
                   : {
-                    minNum: '',
-                    maxNum: ''
+                    min: null,
+                    max: null
                   }
           }
         this.init_pBirth = pfinfo_attr.p_birth
@@ -762,30 +777,30 @@ export default {
           : this.init_pBirth
         this.init_ch_bean = pfinfo_attr.ch_bean
           ? {
-            minNum: pfinfo_attr.ch_bean.min === '不限' ? '' : pfinfo_attr.ch_bean.min,
-            maxNum: pfinfo_attr.ch_bean.max === '不限' ? '' : pfinfo_attr.ch_bean.max
+            min: pfinfo_attr.ch_bean.min === '不限' ? '' : Number(pfinfo_attr.ch_bean.min),
+            max: pfinfo_attr.ch_bean.max === '不限' ? '' : Number(pfinfo_attr.ch_bean.max)
           }
           : this.init_ch_bean
         this.init_ch_coin = pfinfo_attr.ch_coin
           ? {
-            minNum: pfinfo_attr.ch_coin.min === '不限' ? '' : pfinfo_attr.ch_coin.min,
-            maxNum: pfinfo_attr.ch_coin.max === '不限' ? '' : pfinfo_attr.ch_coin.max
+            min: pfinfo_attr.ch_coin.min === '不限' ? '' : Number(pfinfo_attr.ch_coin.min),
+            max: pfinfo_attr.ch_coin.max === '不限' ? '' : Number(pfinfo_attr.ch_coin.max)
           }
           : this.init_ch_coin
         // 用户行为
-        this.init_active_state = user_behavior.active_state
-          ? this.addCData_handle(user_behavior.active_state)
-          : this.init_active_state
-        this.init_login_state = user_behavior.login_state
-          ? this.addCData_handle(user_behavior.login_state)
-          : this.init_login_state
-        this.init_recharge_state = user_behavior.recharge_state
-          ? this.addCData_handle(user_behavior.recharge_state)
-          : this.init_recharge_state
-        // */
+        this.init_active_state =
+          user_behavior.active_state && user_behavior.active_state.length > 0
+            ? this.addCData_handle(user_behavior.active_state)
+            : this.init_active_state
+        this.init_login_state =
+          user_behavior.login_state && user_behavior.login_state.length > 0
+            ? this.addCData_handle(user_behavior.login_state)
+            : this.init_login_state
+        this.init_recharge_state =
+          user_behavior.recharge_state && user_behavior.recharge_state.length > 0
+            ? this.addCData_handle(user_behavior.recharge_state)
+            : this.init_recharge_state
       })
-      // /**
-      // console.log(people, '---people')
     },
     // 处理用户行为
     addCData_handle (o_arr) {
@@ -802,13 +817,12 @@ export default {
             }
           })
           // 范围处理
-          s_obj.seerange = init_range_handle(s_obj.seerange)
-          s_obj.comrange = init_range_handle(s_obj.comrange)
+          s_obj.seerange = c_init_range_handle(s_obj.seerange)
+          s_obj.comrange = c_init_range_handle(s_obj.comrange)
           res_arr.push(s_obj)
           index++
         })
       }
-      console.log(res_arr, '---res_arr')
       return res_arr
     },
     getChannelAndSource () {
@@ -828,7 +842,6 @@ export default {
     getStaffs () {
       getStaffs().then((data) => {
         if (data && isArray(data)) {
-          console.log(data, '---getStaffs')
           this.vipServiceList = this.selectedList_handle(data)
         }
       })
@@ -857,7 +870,7 @@ export default {
           this.spinShow = false
           this.attrs[0].checked = true
           this.attr_handle(true, '设备特征')
-        }, 3000)
+        }, 1000)
       }
     }
   },
@@ -1034,5 +1047,22 @@ p.tip-text {
     color: #fff;
     background-color: #5f9ce0;
     border-color: #5f9ce0;
+}
+.tiptip {
+  margin-left: 20px
+  font-size 14px
+  font-weight 600
+  color #de8181
+}
+.tip-ctrl {
+  margin-left: 10px
+  font-size 20px
+  font-weight 600
+  color #7da3c7
+  cursor pointer
+  transition .5s
+  &:hover {
+    font-size 24px
+  }
 }
 </style>
