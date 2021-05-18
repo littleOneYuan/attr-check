@@ -58,12 +58,12 @@ export default {
       endTime: ''
     },
     ch_bean: {
-      min: '不限',
-      max: '不限'
+      min: null,
+      max: null
     },
     ch_coin: {
-      min: '不限',
-      max: '不限'
+      min: null,
+      max: null
     }
   },
   user_behavior: {
