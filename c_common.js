@@ -85,6 +85,29 @@ export function init_range_handle (init_range) {
 }
 
 /**
+ * @param {Array} init_range 需要处理的初始数据
+ * @description c-ntn组件初始数据处理
+ */
+export function c_init_range_handle (init_range) {
+  const res_range = {
+    min: null,
+    max: null
+  }
+  const { min, max } = init_range
+  if (min === '不限' && max === '不限') {
+    res_range.min = null
+    res_range.max = null
+  } else if (min !== '不限' && max === '不限') {
+    res_range.min = Number(min)
+    res_range.max = null
+  } else {
+    res_range.min = min === 0 || min ? Number(min) : null
+    res_range.max = max === 0 || max ? Number(max) : null
+  }
+  return res_range
+}
+
+/**
  * @param {Array} init_range 需要处理的数据
  * @description 待提交数据处理
  */
@@ -111,6 +134,32 @@ export function commit_range_handle (init_range) {
     return res_range
   }
   return init_range
+}
+
+/**
+ * @param {Array} init_range 需要处理的数据
+ * @description addcondition中c-ntn待提交数据处理
+ */
+export function c_commit_range_handle (init_range) {
+  const res_range = {
+    min: null,
+    max: ''
+  }
+  const { min, max } = init_range
+  if (typeof min === 'object' && typeof max === 'object') {
+    res_range.min = '不限'
+    res_range.max = '不限'
+  } else if (typeof min !== 'object' && typeof max === 'object') {
+    res_range.min = min.toString()
+    res_range.max = '不限'
+  } else if (typeof min === 'object' && typeof max !== 'object') {
+    res_range.min = '0'
+    res_range.max = '不限'
+  } else {
+    res_range.min = min.toString()
+    res_range.max = max.toString()
+  }
+  return res_range
 }
 
 /**
@@ -185,6 +234,46 @@ export function ntnData_handle (data) {
     left = '0'
     content = '[' + left + ',' + right + ')'
   } else if (left !== '' && right === '') {
+    // [num, 不限)
+    right = '不限'
+    content = '[' + left + ',' + right + ')'
+  } else { // [left, right)
+    content = '[' + left + ',' + right + ')'
+  }
+  res.content = content
+  res.range.min = left
+  res.range.max = right
+  return res
+}
+
+/**
+ * @param {Array} data 抛到父组件的数据数组
+ * @description c-ntn组件抛出数据处理
+ */
+export function cntnData_handle (data) {
+  var res = {
+    content: '',
+    range: {
+      min: '',
+      max: ''
+    }
+  }
+  var content = ''
+  var left = data[0] === null ? null : data[0].toString()
+  var right = data[1] === null ? null : data[1].toString()
+  if (left === right && left !== null) {
+    // = num
+    content = '=' + left
+  } else if (left === null && right === null) {
+    // 不限
+    left = '不限'
+    right = '不限'
+    content = '不限'
+  } else if (left === null && right !== null) {
+    // [0, num)
+    left = '0'
+    content = '[' + left + ',' + right + ')'
+  } else if (left !== null && right === null) {
     // [num, 不限)
     right = '不限'
     content = '[' + left + ',' + right + ')'
@@ -454,6 +543,42 @@ export const gameGroup_handle = arr => {
 }
 
 /**
+ * @param {Array} arr 需要处理的已选游戏组
+ * @description 游戏组拿到的选项处理id裁剪
+ */
+export const gameGroup_tail = arr => {
+  const res = {
+    ids_arr: [],
+    keys_arr: [],
+    labels_arr: []
+  }
+  if (arr.length === 0) return res
+  arr.forEach(game => {
+    if (game.check) { // 全选某个游戏组
+      res.labels_arr.push(game.value)
+      if (game.children && game.children.length !== 0) {
+        game.children.forEach(child => {
+          const id = Number(child.key.split('-')[1])
+          res.ids_arr.push(id)
+          res.keys_arr.push(child.key)
+          res.labels_arr.push(child.value)
+        })
+      }
+    } else if (game.children && game.children.length !== 0) { // 单选某个游戏包
+      game.children.forEach(child => {
+        if (child.check) {
+          const id = Number(child.key.split('-')[1])
+          res.ids_arr.push(id)
+          res.keys_arr.push(child.key)
+          res.labels_arr.push(child.value)
+        }
+      })
+    }
+  })
+  return res
+}
+
+/**
  * @param {Array} checked_arr 已选游戏组
  * @param {Array} init_arr 初始游戏组
  * @param {Boolean} def_selall 是否默认全选
@@ -463,7 +588,8 @@ export const set_gameGroup = (checked_arr, init_arr, def_selall = false) => {
   const res = []
   if (checked_arr.length === 0 && !def_selall) return init_arr
   if (init_arr && init_arr.length !== 0) {
-    init_arr.forEach(game => {
+    const temp_arr = deepCopy(init_arr)
+    temp_arr.forEach(game => {
       if (def_selall || checked_arr.includes(game.key)) { // 没有children
         game.check = true
       } else if (game.children && game.children.length !== 0) { // 有children
@@ -477,6 +603,34 @@ export const set_gameGroup = (checked_arr, init_arr, def_selall = false) => {
     })
   }
   return res
+}
+
+/**
+ * @param {Array} checked_arr 已选游戏组
+ * @param {Array} init_arr 初始游戏组
+ * @param {Boolean} def_selall 是否默认全选
+ * @description 拿到的已选游戏组选项check处理
+ */
+export const set_gameGroupcopy = (checked_arr, init_arr, def_selall = false, vue) => {
+  const res = []
+  if (checked_arr.length === 0 && !def_selall) return init_arr
+  if (init_arr && init_arr.length !== 0) {
+    init_arr.forEach(game => {
+      if (def_selall || checked_arr.includes(game.key)) { // 没有children
+        // game.check = true
+        vue.$set(game, 'check', true)
+      } else if (game.children && game.children.length !== 0) { // 有children
+        game.children.forEach(child => {
+          if (def_selall || checked_arr.includes(child.key)) {
+            // child.check = true
+            vue.$set(child, 'check', true)
+          }
+        })
+      }
+      res.push(game)
+    })
+  }
+  // return res
 }
 
 /**
