@@ -90,4 +90,5 @@ export default {
 .ivu-input-number {
   width 100px
 }
+
 </style>
