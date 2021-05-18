@@ -17,7 +17,7 @@
           >{{ btn_name }}</Button
         >
         <Button v-if="select_show && !checked" type="primary" @click="select_confirm"
-          >确认</Button
+          >点我选项生效！！！</Button
         >
       </Col>
     </Row>
@@ -38,9 +38,19 @@
   </div>
 </template>
 <script>
-import { gameGroup_handle, set_gameGroup } from '@/common/js/c_common'
+import {
+  gameGroup_handle,
+  set_gameGroupcopy,
+  gameGroup_tail
+} from '@/common/js/c_common'
 import Selecter from '@/components/select/selecter.vue'
-import { findCheck, getNameOfData, clearTagOfData, deepCopy } from '@/common/js/utils'
+import {
+  findCheck,
+  getNameOfData,
+  getKeyOfData,
+  clearTagOfData,
+  deepCopy
+} from '@/common/js/utils'
 export default {
   name: 'a-select',
   components: {
@@ -56,7 +66,7 @@ export default {
       selectLabels: [],
       selectKeys: [],
       selectIds: [],
-      selectedList: deepCopy(this.selList)
+      selectedList: []
     }
   },
   props: {
@@ -91,23 +101,6 @@ export default {
       }
     }
   },
-  watch: {
-    attrList (n, o) {
-      this.selectList = deepCopy(n)
-      this.select_init = deepCopy(n)
-      if (this.selectedList.length > 0) {
-        this.clearTag({ list: this.selectList })
-        this.selectList = set_gameGroup(
-          this.selectedList ? this.selectedList : [],
-          this.select_init
-        )
-        this.selectIds = gameGroup_handle(this.selectList).ids_arr
-        this.selectKeys = gameGroup_handle(this.selectList).keys_arr
-        this.select_confirm()
-        this.select_show = true
-      }
-    }
-  },
   computed: {
     mult_group () {
       return findCheck(this.selectList)
@@ -132,7 +125,8 @@ export default {
     },
     // 删除已选
     delTag ({ list, name }) {
-      const data = getNameOfData(list, name)
+      // 这里的name其实已经是key了
+      const data = getKeyOfData(list, 'key', name)
       if (data.children && data.children.length) {
         this.selectAll({ list, check: false, current: data.value })
       } else {
@@ -154,17 +148,23 @@ export default {
         }, 2000)
       } else {
         this.select_show = !this.select_show
+        if (this.attr_name === '渠道') {
+          this.spinShow = true
+          setTimeout(() => {
+            this.spinShow = false
+          }, 1000)
+        }
       }
     },
     select_confirm () {
-      // console.log(this.selectList, '---sele')
       this.select_show = !this.select_show
-      this.selectIds = gameGroup_handle(this.selectList).ids_arr
+      if (this.attr_name === '渠道') {
+        this.selectIds = gameGroup_handle(this.selectList).ids_arr
+      } else {
+        this.selectIds = gameGroup_tail(this.selectList).ids_arr
+      }
       this.selectKeys = gameGroup_handle(this.selectList).keys_arr
       this.selectLabels = gameGroup_handle(this.selectList).labels_arr
-      // this.selectComIds = gameGroup_handle(this.gameGroup).combineids_arr
-      console.log(this.selectKeys, '---selectKeys')
-      // console.log(this.selectLabels, '---selectLabels')
       this.$emit(
         'getData',
         this.selectIds,
@@ -183,20 +183,47 @@ export default {
       }
     }
   },
+  watch: {
+    attrList (n, o) {
+      this.selectList = deepCopy(n)
+      this.select_init = deepCopy(n)
+      if (this.selectedList.length > 0) {
+        this.clearTag({ list: this.selectList })
+        set_gameGroupcopy(
+          this.selectedList ? this.selectedList : [],
+          this.selectList,
+          false,
+          this
+        )
+        if (this.attr_name === '渠道') {
+          this.selectIds = gameGroup_handle(this.selectList).ids_arr
+        } else {
+          this.selectIds = gameGroup_tail(this.selectList).ids_arr
+        }
+        this.selectKeys = gameGroup_handle(this.selectList).keys_arr
+        this.select_confirm()
+        this.select_show = true
+      }
+    }
+  },
   created () {
     setTimeout(() => {
       this.selectList = deepCopy(this.attrList)
       this.select_init = deepCopy(this.attrList)
       this.selectedList = deepCopy(this.selList)
-    }, 2000)
-    setTimeout(() => {
       if (this.selectedList.length > 0) {
         this.clearTag({ list: this.selectList })
-        this.selectList = set_gameGroup(
+        set_gameGroupcopy(
           this.selectedList ? this.selectedList : [],
-          this.select_init
+          this.selectList,
+          false,
+          this
         )
-        this.selectIds = gameGroup_handle(this.selectList).ids_arr
+        if (this.attr_name === '渠道') {
+          this.selectIds = gameGroup_handle(this.selectList).ids_arr
+        } else {
+          this.selectIds = gameGroup_tail(this.selectList).ids_arr
+        }
         this.selectKeys = gameGroup_handle(this.selectList).keys_arr
         this.select_confirm()
         this.select_show = true
