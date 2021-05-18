@@ -81,9 +81,7 @@ export default {
       this.datetime = val
     },
     confirmDatetime () {
-      console.log(this.datetime)
       this.comDate = JSON.parse(JSON.stringify(this.datetime))
-      console.log(this.comDate)
       this.$emit('getData', this.comDate, this.attr_name)
     },
     day_clear () {
