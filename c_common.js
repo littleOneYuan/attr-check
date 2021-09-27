@@ -1,12 +1,5 @@
 export const cBlue = '#7da3c7'
 export const cPink = '#f79c9c'
-export const base_http = 'https://bi.caohua.com/api/exportYYReportListByGroup?'
-export const plat_base_http = 'https://bi.caohua.com/api/exportDailyDatas?'
-export const and_base_http =
-  'https://bi.caohua.com/api/exportAndroidYyDayReport?'
-export const ios_base_http = 'https://bi.caohua.com/api/exportIOSYyDayReport?'
-export const old_base_http = 'https://bi.caohua.com/api/exportOldYyDayReport?'
-export const ltv_base_http = 'https://bi.caohua.com/api/exportLtvDatas'
 /**
  * @param {Array} mon_arr 月份标准时间数组
  * @description 用于将获取的中国标准时间转换成yyyy-mm-dd的格式
